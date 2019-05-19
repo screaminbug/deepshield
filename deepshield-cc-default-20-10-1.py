@@ -1,19 +1,11 @@
 #!/usr/bin/python
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
-
-import urlparse
-
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from random import randint
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-# Import tensorflow and numpy
-import tensorflow as tf
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import tensorflow as tf
 from scipy.stats import gaussian_kde
 
 PORT_NUMBER = 8080
@@ -22,8 +14,8 @@ COLUMNS = ["LIMIT_BAL","SEX","EDUCATION","MARRIAGE","AGE","PAY_0","PAY_2","PAY_3
            "BILL_AMT4","BILL_AMT5","BILL_AMT6","PAY_AMT1","PAY_AMT2","PAY_AMT3","PAY_AMT4","PAY_AMT5","PAY_AMT6","DEFAULT"
           ]
 
-training_data_raw = np.genfromtxt('credit-card-default-training-data.csv',delimiter=',')
-holdout_data_raw = np.genfromtxt('credit-card-default-holdout-data.csv',delimiter=',')
+training_data_raw = np.genfromtxt('train.csv',delimiter=',')
+holdout_data_raw = np.genfromtxt('holdout.csv',delimiter=',')
 
 print ('Begining tensor flow session')
 
@@ -50,7 +42,7 @@ nf_generic_factor = 7
 #Populate the NP arrays with value from the file.  
 
 for row in training_data_raw:
-    if((training_row_index == 0) or (training_row_index == 1)):
+    if (training_row_index == 0) or (training_row_index == 1):
         training_row_index = training_row_index + 1
         continue
     j = 0
@@ -62,7 +54,7 @@ for row in training_data_raw:
             continue
         elif j == 1:
             train_data[training_row_index-2][j-1] = float(element)/nf_credit_amount
-        elif (j > 11 and j < 24):
+        elif 11 < j < 24:
             train_data[training_row_index-2][j-1] = float(element)/nf_payment_amount
         elif j == 5:
             train_data[training_row_index-2][j-1] = float(element)/nf_age
@@ -74,7 +66,7 @@ for row in training_data_raw:
     training_row_index =  training_row_index + 1
 
 for row in holdout_data_raw:
-    if((holdout_row_index == 0) or (training_row_index == 1)):
+    if (holdout_row_index == 0) or (training_row_index == 1):
         holdout_row_index = holdout_row_index + 1
         continue
     j = 0
@@ -86,7 +78,7 @@ for row in holdout_data_raw:
             continue
         elif j == 1:
             holdout_data[holdout_row_index-2][j-1] = float(element)/nf_credit_amount
-        elif(j > 11 and j < 24):
+        elif 11 < j < 24:
             holdout_data[holdout_row_index-2][j-1] = float(element)/nf_payment_amount
         elif j == 5:
             holdout_data[holdout_row_index-2][j-1] = float(element)/nf_age
@@ -129,7 +121,7 @@ x = tf.placeholder(tf.float32, [None, 24])
 Wx = weight_variable([24, 20])
 bx = bias_variable([20])
 
-# Defind the equation with activation function for the first layer to be RELU
+# Define the equation with activation function for the first layer to be RELU
 
 hi = tf.nn.relu(tf.matmul(x, Wx) + bx)
 
@@ -138,7 +130,7 @@ hi = tf.nn.relu(tf.matmul(x, Wx) + bx)
 Whi = weight_variable([20, 10])
 bhi = bias_variable([10])
 
-# Defind the equation with activation function for the first layer to be RELU
+# Define the equation with activation function for the first layer to be RELU
 
 h1 = tf.nn.relu(tf.matmul(hi, Whi) + bhi)
 
@@ -147,7 +139,7 @@ h1 = tf.nn.relu(tf.matmul(hi, Whi) + bhi)
 Wh1 = weight_variable([10, 1])
 bh1 = bias_variable([1])
 
-# Defind the equation with activation function for the first layer to be RELU
+# Define the equation with activation function for the first layer to be RELU
 
 h2 = tf.nn.relu(tf.matmul(h1, Wh1) + bh1)
 
@@ -156,7 +148,7 @@ h2 = tf.nn.relu(tf.matmul(h1, Wh1) + bh1)
 Wh2 = weight_variable([16, 1])
 bh2 = bias_variable([1])
 
-# Defind the activation function for the second layer to simply output a number based on weights and biases
+# Define the activation function for the second layer to simply output a number based on weights and biases
 
 y = tf.nn.relu(tf.matmul(h1, Wh1) + bh1)
 
@@ -217,7 +209,7 @@ FN = 0
 
 # Calculate TP, TN, FP, FN
 
-risk = [None] * len(holdout_data_result)
+risk = np.zeros((len(holdout_data_result)))
 
 for i in range(len(holdout_data)):
     holdout_data_batch = np.empty((1,24))
@@ -231,23 +223,23 @@ for i in range(len(holdout_data)):
     
     #print('Holdout data = %s' % holdout_data[i])
     #print('Input = %s' % holdout_data_batch)
-    
+
     get_risk = y
     risk_score = get_risk.eval({x: holdout_data_batch})
     risk[i] = risk_score[0][0]
     
     #print('Predicted Risk = %s - Real Risk = %s' % (risk[i],holdout_data_result[i][0]))
     
-    if ((risk[i] > default_risk_threshold) and (holdout_data_result[i][0] == 1)):
+    if (risk[i] > default_risk_threshold) and (holdout_data_result[i][0] == 1):
         TP = TP + 1
-    elif ((risk[i] > default_risk_threshold) and (holdout_data_result[i][0] == 0)):
+    elif (risk[i] > default_risk_threshold) and (holdout_data_result[i][0] == 0):
         FP = FP + 1
-    elif ((risk[i] < default_risk_threshold) and (holdout_data_result[i][0] == 1)):
+    elif (risk[i] < default_risk_threshold) and (holdout_data_result[i][0] == 1):
         FN = FN + 1
-    elif ((risk[i] < default_risk_threshold) and (holdout_data_result[i][0] == 0)):
+    elif (risk[i] < default_risk_threshold) and (holdout_data_result[i][0] == 0):
         TN = TN + 1
      
-        
+
 # lets calculate accuracy to be how many true positives we got right
 precision = float(TP)/(TP + FP)
 recall = float(TP)/(TP + FN)
@@ -256,14 +248,14 @@ print('Accuracy = %s \nPrecision = %s \nRecall = %s \nTP = %s \nFP = %s \nTN = %
 
 plot_against_index = 3
 
-if (plot_against_index != -1):
+if plot_against_index != -1:
     plot_against_data = [None] * len(holdout_data)
     risk_data = [None] * len(holdout_data_result)
     
     for i in range(len(holdout_data)):
-        risk_data[i] = risk[i];
-        plot_against_data[i] = holdout_data[i][plot_against_index];
-        
+        risk_data[i] = risk[i]
+        plot_against_data[i] = holdout_data[i][plot_against_index]
+
     plot_against_data, risk_data = zip(*sorted(zip(plot_against_data, risk_data)))
     
     plot_against_data, risk_data = (list(t) for t in zip(*sorted(zip(plot_against_data, risk_data))))
